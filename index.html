@@ -221,6 +221,46 @@
       padding: 2px 6px;
     }
 
+    /* FILENAME INPUT FIELD STYLING */
+    .filename-field-box {
+      margin-bottom: 1.2rem;
+    }
+    .filename-field-box label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .filename-input-wrap {
+      display: flex;
+      align-items: center;
+      background: var(--card-inner);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 0 12px;
+      transition: border-color 0.15s ease;
+    }
+    .filename-input-wrap:focus-within {
+      border-color: var(--border-focus);
+    }
+    .filename-input-wrap input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 0.95rem;
+      padding: 10px 0;
+      outline: none;
+    }
+    .filename-ext {
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-weight: 700;
+      padding-left: 6px;
+      user-select: none;
+    }
+
     /* VISUAL PAGE GRID */
     .pages-grid {
       display: grid;
@@ -372,7 +412,6 @@
       margin-bottom: 0;
     }
 
-    /* IN-MODAL APPS ECOSYSTEM STRIP */
     .modal-eco-wrap {
       border-top: 1px solid var(--border);
       padding-top: 1rem;
@@ -580,6 +619,15 @@
 
         <div class="file-list" id="mergeFileList"></div>
 
+        <!-- CUSTOM FILENAME INPUT (MERGE) -->
+        <div class="filename-field-box">
+          <label id="lblMergeFilename">Output Filename (फाइल का नाम):</label>
+          <div class="filename-input-wrap">
+            <input type="text" id="customMergeFilename" value="pdfsmart_merged" placeholder="e.g. 10th_12th_certificates">
+            <span class="filename-ext">.pdf</span>
+          </div>
+        </div>
+
         <button type="button" class="btn-action" id="btnMergeAction" onclick="executeMerge()" disabled>⚡ Merge & Download PDF</button>
       </div>
     </div>
@@ -604,6 +652,15 @@
           </div>
 
           <div class="pages-grid" id="pagesGrid"></div>
+
+          <!-- CUSTOM FILENAME INPUT (SPLIT) -->
+          <div class="filename-field-box">
+            <label id="lblSplitFilename">Output Filename (फाइल का नाम):</label>
+            <div class="filename-input-wrap">
+              <input type="text" id="customSplitFilename" value="pdfsmart_extracted" placeholder="e.g. admit_card_selected_pages">
+              <span class="filename-ext">.pdf</span>
+            </div>
+          </div>
 
           <button type="button" class="btn-action" onclick="executeVisualExport()" id="btnSplitAction">💾 Download Processed PDF</button>
         </div>
@@ -645,7 +702,7 @@
     </footer>
   </div>
 
-  <!-- COMPLETION MODAL POPUP WITH ECOSYSTEM RECOMMENDATIONS -->
+  <!-- COMPLETION MODAL POPUP -->
   <div class="modal-overlay" id="completionModal">
     <div class="modal-card">
       <span class="modal-icon">🎉</span>
@@ -658,7 +715,7 @@
         <div><span>Privacy Verification:</span> <strong style="color:var(--accent);">100% Client-Side RAM</strong></div>
       </div>
 
-      <!-- IN-POPUP APPS CAROUSEL / SHORTCUTS -->
+      <!-- IN-POPUP APPS CAROUSEL -->
       <div class="modal-eco-wrap">
         <div class="modal-eco-label" id="lblPopupEco">
           <span>⚡ Related Tools for Applicants & Students:</span>
@@ -717,13 +774,21 @@
     let splitFileObj = null;
     let pageStates = [];
     let lastGeneratedBlob = null;
-    let lastGeneratedFilename = 'document.pdf';
+    let lastGeneratedFilename = 'pdfsmart_merged.pdf';
 
     function switchTab(tab) {
       document.getElementById('viewMerge').style.display = (tab === 'merge') ? 'block' : 'none';
       document.getElementById('viewSplit').style.display = (tab === 'split') ? 'block' : 'none';
       document.getElementById('tabBtnMerge').classList.toggle('active', tab === 'merge');
       document.getElementById('tabBtnSplit').classList.toggle('active', tab === 'split');
+    }
+
+    // SANITIZE USER FILENAME HELPER
+    function sanitizeFilename(inputVal, defaultName) {
+      let clean = (inputVal || '').trim().replace(/[^a-zA-Z0-9_\-\u0900-\u097F]/g, '_');
+      // Strip out any manually typed .pdf suffix to prevent .pdf.pdf
+      clean = clean.replace(/\.pdf$/i, '');
+      return (clean.length > 0 ? clean : defaultName) + '.pdf';
     }
 
     // MERGE ENGINE
@@ -793,7 +858,9 @@
         }
 
         const mergedPdfBytes = await mergedPdf.save();
-        lastGeneratedFilename = 'merged_document.pdf';
+        const userInputName = document.getElementById('customMergeFilename').value;
+        lastGeneratedFilename = sanitizeFilename(userInputName, 'pdfsmart_merged');
+
         downloadBlob(mergedPdfBytes, lastGeneratedFilename);
 
         showCompletionPopup({
@@ -840,6 +907,10 @@
 
         document.getElementById('lblSplitFileStatus').innerText = `${file.name} (${total} pages)`;
         document.getElementById('txtGridCount').innerText = `Total Pages: ${total}`;
+
+        // Populate custom split default name based on file
+        const baseName = file.name.replace(/\.pdf$/i, '');
+        document.getElementById('customSplitFilename').value = `pdfsmart_${baseName}_pages`;
 
         pageStates = [];
         grid.innerHTML = '';
@@ -930,7 +1001,9 @@
         }
 
         const newPdfBytes = await newPdf.save();
-        lastGeneratedFilename = `processed_${activePages.length}_pages.pdf`;
+        const userInputName = document.getElementById('customSplitFilename').value;
+        lastGeneratedFilename = sanitizeFilename(userInputName, `pdfsmart_extracted_${activePages.length}p`);
+
         downloadBlob(newPdfBytes, lastGeneratedFilename);
 
         showCompletionPopup({
@@ -983,11 +1056,13 @@
       closeModal();
       mergeFiles = [];
       document.getElementById('inputMergeFiles').value = '';
+      document.getElementById('customMergeFilename').value = 'pdfsmart_merged';
       renderMergeList();
 
       splitFileObj = null;
       pageStates = [];
       document.getElementById('inputSplitFile').value = '';
+      document.getElementById('customSplitFilename').value = 'pdfsmart_extracted';
       document.getElementById('splitControls').style.display = 'none';
       document.getElementById('lblSplitFileStatus').innerText = 'No file selected';
       document.getElementById('pagesGrid').innerHTML = '';
@@ -1007,9 +1082,11 @@
         document.getElementById('tabBtnSplit').innerText = '✂ विजुअल पेज ऑर्गनाइजर';
         document.getElementById('txtMergeHead').innerText = 'एक से अधिक पीडीएफ जोड़ें';
         document.getElementById('txtMergeSub').innerText = 'फाइलों को क्रम से जोड़कर एक नया दस्तावेज तैयार करें';
+        document.getElementById('lblMergeFilename').innerText = 'डाउनलोड फाइल का नाम (Filename):';
         document.getElementById('btnMergeAction').innerText = '⚡ मर्ज करें और डाउनलोड करें';
         document.getElementById('txtSplitHead').innerText = 'विजुअल पेज ऑर्गनाइजर व स्प्लिट';
         document.getElementById('txtSplitSub').innerText = 'थंबनेल देखकर पेज घुमाएं (90°), खाली पेज हटाएं या अलग करें';
+        document.getElementById('lblSplitFilename').innerText = 'डाउनलोड फाइल का नाम (Filename):';
         document.getElementById('btnSplitAction').innerText = '💾 संशोधित पीडीएफ डाउनलोड करें';
         document.getElementById('txtGridHelp').innerText = 'पेज हटाने के लिए ✕ दबाएं • घुमाने के लिए ↻ दबाएं';
         document.getElementById('btnModalNew').innerText = '➕ नया काम शुरू करें (Start New)';
@@ -1025,9 +1102,11 @@
         document.getElementById('tabBtnSplit').innerText = '✂️ Visual Page Organizer & Split';
         document.getElementById('txtMergeHead').innerText = 'Merge Multiple PDF Documents';
         document.getElementById('txtMergeSub').innerText = 'Select multiple PDFs to combine them in exact sequence into a single clean file';
+        document.getElementById('lblMergeFilename').innerText = 'Output Filename (Optional):';
         document.getElementById('btnMergeAction').innerText = '⚡ Merge & Download PDF';
         document.getElementById('txtSplitHead').innerText = 'Visual Page Organizer & Split';
         document.getElementById('txtSplitSub').innerText = 'View live thumbnails, rotate pages (90°), delete blank pages, or extract specific pages';
+        document.getElementById('lblSplitFilename').innerText = 'Output Filename (Optional):';
         document.getElementById('btnSplitAction').innerText = '💾 Download Processed PDF';
         document.getElementById('txtGridHelp').innerText = 'Click ✕ to exclude page • ↻ to rotate';
         document.getElementById('btnModalNew').innerText = '➕ Start New Process';
