@@ -304,6 +304,110 @@
       cursor: not-allowed;
     }
 
+    /* MODAL POPUP (SUCCESS & ACTIONS) */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.78);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100000;
+      padding: 1rem;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 460px;
+      padding: 1.75rem;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes popIn {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .modal-icon {
+      font-size: 3rem;
+      margin-bottom: 0.6rem;
+      display: block;
+    }
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 0.4rem;
+    }
+    .modal-desc {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 1.35rem;
+    }
+    .modal-meta-box {
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      margin-bottom: 1.35rem;
+      text-align: left;
+    }
+    .modal-meta-box div {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .modal-meta-box div:last-child {
+      margin-bottom: 0;
+    }
+    .modal-btn-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .btn-modal-primary {
+      background: var(--accent);
+      color: #052e16;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .btn-modal-primary:hover { background: var(--accent-hover); }
+    .btn-modal-secondary {
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-modal-secondary:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.82rem;
+      cursor: pointer;
+      padding: 6px;
+    }
+    .btn-modal-close:hover { color: #fff; }
+
     .ecosystem-section {
       margin-top: 2.5rem;
       border-top: 1px solid var(--border);
@@ -483,6 +587,33 @@
     </footer>
   </div>
 
+  <!-- COMPLETION MODAL POPUP -->
+  <div class="modal-overlay" id="completionModal">
+    <div class="modal-card">
+      <span class="modal-icon">🎉</span>
+      <div class="modal-title" id="modalTitle">Congratulations!</div>
+      <div class="modal-desc" id="modalDesc">Your PDF has been merged and downloaded successfully to your device.</div>
+
+      <div class="modal-meta-box">
+        <div><span>Filename:</span> <strong id="modalFileName" style="color:#fff;">merged_document.pdf</strong></div>
+        <div><span>Total Pages:</span> <strong id="modalPageCount" style="color:var(--accent);">0</strong></div>
+        <div><span>Security Status:</span> <strong style="color:var(--accent);">100% Private (0 Server Uploads)</strong></div>
+      </div>
+
+      <div class="modal-btn-row">
+        <button type="button" class="btn-modal-primary" onclick="resetToNewInitial()" id="btnModalNew">
+          ➕ Start New Process (नया काम शुरू करें)
+        </button>
+        <button type="button" class="btn-modal-secondary" onclick="redownloadLastFile()" id="btnModalRedownload">
+          📥 Download Again (पुनः डाउनलोड करें)
+        </button>
+        <button type="button" class="btn-modal-close" onclick="closeModal()" id="btnModalClose">
+          Close (बंद करें)
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Initialize PDF.js worker
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -490,7 +621,9 @@
     let currentLang = 'en';
     let mergeFiles = [];
     let splitFileObj = null;
-    let pageStates = []; // Array of { pageNum: 1, deleted: false, rotation: 0 }
+    let pageStates = [];
+    let lastGeneratedBlob = null;
+    let lastGeneratedFilename = 'document.pdf';
 
     function switchTab(tab) {
       document.getElementById('viewMerge').style.display = (tab === 'merge') ? 'block' : 'none';
@@ -549,18 +682,33 @@
       if (mergeFiles.length < 2) return;
       const btn = document.getElementById('btnMergeAction');
       btn.disabled = true;
-      btn.innerText = (currentLang === 'en') ? 'Processing In Browser...' : 'रूपांतरित किया जा रहा है...';
+      btn.innerText = (currentLang === 'en') ? 'Merging In Browser...' : 'रूपांतरित किया जा रहा है...';
 
       try {
         const mergedPdf = await PDFLib.PDFDocument.create();
+        let totalPagesCount = 0;
+
         for (let file of mergeFiles) {
           const arrayBuffer = await file.arrayBuffer();
           const pdf = await PDFLib.PDFDocument.load(arrayBuffer);
           const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-          copiedPages.forEach(page => mergedPdf.addPage(page));
+          copiedPages.forEach((page) => {
+            mergedPdf.addPage(page);
+            totalPagesCount++;
+          });
         }
+
         const mergedPdfBytes = await mergedPdf.save();
-        downloadBlob(mergedPdfBytes, 'merged_document.pdf');
+        lastGeneratedFilename = 'merged_document.pdf';
+        downloadBlob(mergedPdfBytes, lastGeneratedFilename);
+
+        // Show Congratulations Modal
+        showCompletionPopup({
+          title: (currentLang === 'en') ? '🎉 Congratulations!' : '🎉 बधाई हो!',
+          desc: (currentLang === 'en') ? 'Your PDFs have been successfully merged & downloaded to your device.' : 'आपकी सभी पीडीएफ फाइलें सफलतापूर्वक मर्ज हो गई हैं और डाउनलोड हो चुकी हैं।',
+          filename: lastGeneratedFilename,
+          pages: totalPagesCount
+        });
       } catch (err) {
         alert('Error: ' + err.message);
       } finally {
@@ -629,7 +777,6 @@
           card.insertBefore(canvasWrap, card.firstChild);
           grid.appendChild(card);
 
-          // Render thumbnail
           renderPageThumbnail(pdf, i, canvas);
         }
       } catch (err) {
@@ -690,7 +837,16 @@
         }
 
         const newPdfBytes = await newPdf.save();
-        downloadBlob(newPdfBytes, `processed_${activePages.length}_pages.pdf`);
+        lastGeneratedFilename = `processed_${activePages.length}_pages.pdf`;
+        downloadBlob(newPdfBytes, lastGeneratedFilename);
+
+        // Show Congratulations Modal
+        showCompletionPopup({
+          title: (currentLang === 'en') ? '🎉 Congratulations!' : '🎉 बधाई हो!',
+          desc: (currentLang === 'en') ? 'Your customized PDF has been extracted & downloaded successfully.' : 'आपकी चयनित पीडीएफ फाइल सफलतापूर्वक तैयार हो गई है और डाउनलोड हो चुकी है।',
+          filename: lastGeneratedFilename,
+          pages: activePages.length
+        });
       } catch (err) {
         alert('Export error: ' + err.message);
       } finally {
@@ -700,13 +856,56 @@
     }
 
     function downloadBlob(bytes, filename) {
-      const blob = new Blob([bytes], { type: 'application/pdf' });
+      lastGeneratedBlob = new Blob([bytes], { type: 'application/pdf' });
       const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
+      link.href = URL.createObjectURL(lastGeneratedBlob);
       link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    }
+
+    function redownloadLastFile() {
+      if (!lastGeneratedBlob) return;
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(lastGeneratedBlob);
+      link.download = lastGeneratedFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // MODAL POPUP HELPERS
+    function showCompletionPopup({ title, desc, filename, pages }) {
+      document.getElementById('modalTitle').innerText = title;
+      document.getElementById('modalDesc').innerText = desc;
+      document.getElementById('modalFileName').innerText = filename;
+      document.getElementById('modalPageCount').innerText = `${pages} page(s)`;
+      document.getElementById('completionModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('completionModal').classList.remove('active');
+    }
+
+    // "NEW INITIAL" WORKSPACE RESET
+    function resetToNewInitial() {
+      closeModal();
+
+      // Reset Merge Tab
+      mergeFiles = [];
+      document.getElementById('inputMergeFiles').value = '';
+      renderMergeList();
+
+      // Reset Split Tab
+      splitFileObj = null;
+      pageStates = [];
+      document.getElementById('inputSplitFile').value = '';
+      document.getElementById('splitControls').style.display = 'none';
+      document.getElementById('lblSplitFileStatus').innerText = 'No file selected';
+      document.getElementById('pagesGrid').innerHTML = '';
+
+      lastGeneratedBlob = null;
     }
 
     function toggleLanguage() {
@@ -726,6 +925,9 @@
         document.getElementById('txtSplitSub').innerText = 'थंबनेल देखकर पेज घुमाएं (90°), खाली पेज हटाएं या अलग करें';
         document.getElementById('btnSplitAction').innerText = '💾 संशोधित पीडीएफ डाउनलोड करें';
         document.getElementById('txtGridHelp').innerText = 'पेज हटाने के लिए ✕ दबाएं • घुमाने के लिए ↻ दबाएं';
+        document.getElementById('btnModalNew').innerText = '➕ नया काम शुरू करें (Start New)';
+        document.getElementById('btnModalRedownload').innerText = '📥 पुनः डाउनलोड करें (Download Again)';
+        document.getElementById('btnModalClose').innerText = 'बंद करें (Close)';
       } else {
         document.getElementById('btnLangText').innerText = 'हिंदी में बदलें (Hindi)';
         document.getElementById('lblZeroUploadBadge').innerText = '100% In-Browser';
@@ -740,6 +942,9 @@
         document.getElementById('txtSplitSub').innerText = 'View live thumbnails, rotate pages (90°), delete blank pages, or extract specific pages';
         document.getElementById('btnSplitAction').innerText = '💾 Download Processed PDF';
         document.getElementById('txtGridHelp').innerText = 'Click ✕ to exclude page • ↻ to rotate';
+        document.getElementById('btnModalNew').innerText = '➕ Start New Process';
+        document.getElementById('btnModalRedownload').innerText = '📥 Download Again';
+        document.getElementById('btnModalClose').innerText = 'Close';
       }
     }
   </script>
