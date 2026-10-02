@@ -3,11 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <title>Smart PDF Tools - Merge, Split & Extract Pages (100% Private)</title>
-  <meta name="description" content="100% Free and Private in-browser PDF tool. Merge multiple PDFs, extract or split pages, and reorder marksheets or admit cards with zero server uploads.">
+  <title>Smart PDF Tools - Visual Merge, Split, Reorder & Rotate (100% Private)</title>
+  <meta name="description" content="100% Free and Private in-browser PDF tool. Visual page grid, merge multiple PDFs, extract or delete pages, and rotate certificates with zero server uploads.">
 
-  <!-- PDF-Lib client-side library -->
+  <!-- PDF-Lib for processing -->
   <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <!-- PDF.js for rendering visual thumbnails -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
   <!-- Privacy Analytics -->
   <script data-goatcounter="https://quicktools.goatcounter.com/count"
@@ -48,7 +50,7 @@
     }
     .container {
       width: 100%;
-      max-width: 1040px;
+      max-width: 1080px;
       margin: 0 auto;
       padding: 1.25rem 1rem 3.5rem 1rem;
     }
@@ -110,8 +112,6 @@
       max-width: 720px;
       margin: 0 auto;
     }
-
-    /* Tabs */
     .tabs-nav {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -135,7 +135,6 @@
       color: var(--primary);
       background: rgba(239, 68, 68, 0.12);
     }
-
     .card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -157,8 +156,6 @@
       color: var(--muted);
       margin-bottom: 1.2rem;
     }
-
-    /* Dropzones */
     .dropzone {
       border: 2px dashed var(--border);
       border-radius: var(--radius);
@@ -190,8 +187,6 @@
       margin-top: 4px;
       display: block;
     }
-
-    /* File lists */
     .file-list {
       display: flex;
       flex-direction: column;
@@ -226,25 +221,68 @@
       padding: 2px 6px;
     }
 
-    label {
-      display: block;
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--muted);
-      margin-bottom: 6px;
+    /* VISUAL PAGE GRID */
+    .pages-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+      margin-top: 1rem;
+      margin-bottom: 1.25rem;
+      max-height: 480px;
+      overflow-y: auto;
+      padding: 4px;
     }
-    input[type="text"] {
-      width: 100%;
-      padding: 10px 14px;
+    .page-card {
       background: var(--card-inner);
       border: 1.5px solid var(--border);
       border-radius: 8px;
-      color: var(--text);
-      font-size: 0.95rem;
-      outline: none;
-      margin-bottom: 1rem;
+      padding: 6px;
+      text-align: center;
+      position: relative;
+      transition: all 0.15s ease;
     }
-    input[type="text"]:focus { border-color: var(--border-focus); }
+    .page-card.deleted {
+      opacity: 0.35;
+      filter: grayscale(1);
+      border-style: dashed;
+    }
+    .page-canvas-wrap {
+      width: 100%;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #050914;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .page-canvas-wrap canvas {
+      max-width: 100%;
+      max-height: 100%;
+      display: block;
+    }
+    .page-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .page-btn-icon {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #fff;
+      border-radius: 4px;
+      padding: 2px 6px;
+      cursor: pointer;
+      font-size: 0.75rem;
+    }
+    .page-btn-icon:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
 
     .btn-action {
       display: block;
@@ -330,23 +368,11 @@
       <span style="color:#334155;">|</span>
       <a href="https://unknownuniversem-blip.github.io/open-astrologer/" style="color:#f59e0b; text-decoration:none; font-weight:600; white-space:nowrap;">🔮 OpenAstrologer</a>
       <span style="color:#334155;">|</span>
-      <a href="https://unknownuniversem-blip.github.io/panchang-choghadiya/" style="color:#f59e0b; text-decoration:none; font-weight:600; white-space:nowrap;">🕉️ पंचांग व मुहूर्त</a>
-      <span style="color:#334155;">|</span>
-      <a href="https://unknownuniversem-blip.github.io/passport-photo-grid/" style="color:#38bdf8; text-decoration:none; font-weight:600; white-space:nowrap;">📷 पासपोर्ट ग्रिड</a>
-      <span style="color:#334155;">|</span>
-      <a href="https://unknownuniversem-blip.github.io/age-eligibility-calc/" style="color:#38bdf8; text-decoration:none; font-weight:600; white-space:nowrap;">⏱ आयु व पात्रता</a>
-      <span style="color:#334155;">|</span>
-      <a href="https://unknownuniversem-blip.github.io/gst-quick-calc/" style="color:#94a3b8; text-decoration:none; font-weight:600; white-space:nowrap;">🧾 GST कैलकुलेटर</a>
-      <span style="color:#334155;">|</span>
-      <a href="https://unknownuniversem-blip.github.io/land-converter/" style="color:#10b981; text-decoration:none; font-weight:600; white-space:nowrap;">🌾 जमीन नाप</a>
-      <span style="color:#334155;">|</span>
-      <a href="https://unknownuniversem-blip.github.io/loan-emi-calculator/" style="color:#94a3b8; text-decoration:none; font-weight:600; white-space:nowrap;">💰 EMI Reducer</a>
-      <span style="color:#334155;">|</span>
-      <a href="https://unknownuniversem-blip.github.io/wa-direct/" style="color:#94a3b8; text-decoration:none; font-weight:600; white-space:nowrap;">💬 WA Direct</a>
-      <span style="color:#334155;">|</span>
       <a href="https://unknownuniversem-blip.github.io/exam-resizer/" style="color:#94a3b8; text-decoration:none; font-weight:600; white-space:nowrap;">📷 Photo Resizer</a>
       <span style="color:#334155;">|</span>
-      <a href="https://unknownuniversem-blip.github.io/typing-speed-finger-test/" style="color:#94a3b8; text-decoration:none; font-weight:600; white-space:nowrap;">⌨ Typing Test</a>
+      <a href="https://unknownuniversem-blip.github.io/passport-photo-grid/" style="color:#94a3b8; text-decoration:none; font-weight:600; white-space:nowrap;">📷 पासपोर्ट ग्रिड</a>
+      <span style="color:#334155;">|</span>
+      <a href="https://unknownuniversem-blip.github.io/land-converter/" style="color:#10b981; text-decoration:none; font-weight:600; white-space:nowrap;">🌾 जमीन नाप</a>
     </div>
   </div>
 
@@ -360,32 +386,32 @@
             <text x="10" y="21" font-family="sans-serif" font-size="7" font-weight="bold" fill="#ef4444">PDF</text>
           </svg>
           <span class="brand-name">PDF<span style="color:var(--primary);">Smart</span></span>
-          <span class="brand-badge" id="lblZeroUploadBadge">100% Client-Side</span>
+          <span class="brand-badge" id="lblZeroUploadBadge">100% In-Browser</span>
         </div>
         <button type="button" class="lang-toggle-btn" onclick="toggleLanguage()">
           🌐 <span id="btnLangText">हिंदी में बदलें (Hindi)</span>
         </button>
       </div>
 
-      <h1 id="txtTitle">Merge & Split PDF Pages Offline</h1>
-      <p id="txtSubtitle">Combine certificates, extract selected pages from marksheets or admit cards. Files process directly on your device with zero server uploads.</p>
+      <h1 id="txtTitle">Merge, Split, Rotate & Reorder PDFs Offline</h1>
+      <p id="txtSubtitle">Combine marksheets, rotate certificates, and delete unwanted pages with live visual thumbnails. 100% private in-browser tool.</p>
     </header>
 
     <div class="tabs-nav">
       <button class="tab-btn active" id="tabBtnMerge" onclick="switchTab('merge')">📑 Merge Multiple PDFs</button>
-      <button class="tab-btn" id="tabBtnSplit" onclick="switchTab('split')">✂️ Split & Extract Pages</button>
+      <button class="tab-btn" id="tabBtnSplit" onclick="switchTab('split')">✂️ Visual Page Organizer & Split</button>
     </div>
 
     <!-- TAB 1: MERGE -->
     <div id="viewMerge">
       <div class="card">
-        <div class="card-title" id="txtMergeHead">Merge Multiple PDF Files</div>
-        <div class="card-subtitle" id="txtMergeSub">Select multiple PDF files to combine them in order into a single document</div>
+        <div class="card-title" id="txtMergeHead">Merge Multiple PDF Documents</div>
+        <div class="card-subtitle" id="txtMergeSub">Select multiple PDFs to combine them in exact sequence into a single clean file</div>
 
         <div class="dropzone" id="dropzoneMerge" onclick="document.getElementById('inputMergeFiles').click()">
           <span class="dropzone-icon">📥</span>
           <span class="dropzone-text" id="txtDropMerge">Click to Select or Drag & Drop PDFs</span>
-          <span class="dropzone-sub">Upload marksheets, certificates, or notices</span>
+          <span class="dropzone-sub">Add marksheets, degrees, or application notices</span>
           <input type="file" id="inputMergeFiles" accept="application/pdf" multiple style="display:none" onchange="handleMergeFiles(this.files)">
         </div>
 
@@ -395,24 +421,29 @@
       </div>
     </div>
 
-    <!-- TAB 2: SPLIT -->
+    <!-- TAB 2: SPLIT & VISUAL PAGE ORGANIZER -->
     <div id="viewSplit" style="display:none;">
       <div class="card">
-        <div class="card-title" id="txtSplitHead">Extract or Split PDF Pages</div>
-        <div class="card-subtitle" id="txtSplitSub">Choose a multi-page PDF and enter page numbers or ranges to export</div>
+        <div class="card-title" id="txtSplitHead">Visual Page Organizer & Split</div>
+        <div class="card-subtitle" id="txtSplitSub">View live thumbnails, rotate pages (90°), delete blank pages, or extract specific pages</div>
 
         <div class="dropzone" id="dropzoneSplit" onclick="document.getElementById('inputSplitFile').click()">
           <span class="dropzone-icon">📑</span>
-          <span class="dropzone-text" id="txtDropSplit">Click to Select or Drag Single PDF</span>
+          <span class="dropzone-text" id="txtDropSplit">Click to Select or Drag a Multi-Page PDF</span>
           <span class="dropzone-sub" id="lblSplitFileStatus">No file selected</span>
           <input type="file" id="inputSplitFile" accept="application/pdf" style="display:none" onchange="handleSplitFile(this.files[0])">
         </div>
 
+        <!-- Live Visual Grid -->
         <div id="splitControls" style="display:none;">
-          <label id="lblPageRange">Page Numbers or Ranges (e.g. 1, 3-5, 8)</label>
-          <input type="text" id="inputPages" placeholder="e.g. 1, 2-4">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:0.85rem; font-weight:700; color:#fff;" id="txtGridCount">Pages: 0</span>
+            <span style="font-size:0.75rem; color:var(--muted);" id="txtGridHelp">Click ✕ to exclude page • ↻ to rotate</span>
+          </div>
 
-          <button type="button" class="btn-action" onclick="executeSplit()" id="btnSplitAction">✂️ Extract Pages & Download</button>
+          <div class="pages-grid" id="pagesGrid"></div>
+
+          <button type="button" class="btn-action" onclick="executeVisualExport()" id="btnSplitAction">💾 Download Processed PDF</button>
         </div>
       </div>
     </div>
@@ -420,7 +451,7 @@
     <!-- ZERO STORAGE BANNER -->
     <div style="display:flex; align-items:center; gap:10px; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); border-radius:8px; padding:10px 14px; margin-top:1.5rem;">
       <span style="font-size:1.2rem;">🔒</span>
-      <span style="font-size:0.78rem; color:var(--muted);" id="txtZeroStorage">100% Private & In-Browser: Your confidential government IDs, admit cards, and marksheets are processed solely in memory. Nothing is ever sent to a server.</span>
+      <span style="font-size:0.78rem; color:var(--muted);" id="txtZeroStorage">100% Private & In-Browser: Your confidential marksheets, court documents, and ID cards are processed directly in your browser's WebAssembly/RAM. Zero bytes are uploaded to any server.</span>
     </div>
 
     <!-- ECOSYSTEM -->
@@ -453,10 +484,13 @@
   </div>
 
   <script>
+    // Initialize PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
     let currentLang = 'en';
     let mergeFiles = [];
     let splitFileObj = null;
-    let splitDocTotalPages = 0;
+    let pageStates = []; // Array of { pageNum: 1, deleted: false, rotation: 0 }
 
     function switchTab(tab) {
       document.getElementById('viewMerge').style.display = (tab === 'merge') ? 'block' : 'none';
@@ -465,7 +499,7 @@
       document.getElementById('tabBtnSplit').classList.toggle('active', tab === 'split');
     }
 
-    // DRAG & DROP MERGE
+    // MERGE ENGINE
     const dzMerge = document.getElementById('dropzoneMerge');
     ['dragenter', 'dragover'].forEach(e => {
       dzMerge.addEventListener(e, ev => { ev.preventDefault(); dzMerge.classList.add('dragover'); });
@@ -519,25 +553,23 @@
 
       try {
         const mergedPdf = await PDFLib.PDFDocument.create();
-
         for (let file of mergeFiles) {
           const arrayBuffer = await file.arrayBuffer();
           const pdf = await PDFLib.PDFDocument.load(arrayBuffer);
           const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-          copiedPages.forEach((page) => mergedPdf.addPage(page));
+          copiedPages.forEach(page => mergedPdf.addPage(page));
         }
-
         const mergedPdfBytes = await mergedPdf.save();
         downloadBlob(mergedPdfBytes, 'merged_document.pdf');
       } catch (err) {
-        alert((currentLang === 'en') ? 'Error processing PDF: ' + err.message : 'पीडीएफ प्रोसेस करने में त्रुटि: ' + err.message);
+        alert('Error: ' + err.message);
       } finally {
         btn.disabled = false;
         btn.innerText = (currentLang === 'en') ? '⚡ Merge & Download PDF' : '⚡ मर्ज करें और डाउनलोड करें';
       }
     }
 
-    // DRAG & DROP SPLIT
+    // VISUAL SPLIT & ORGANIZER ENGINE
     const dzSplit = document.getElementById('dropzoneSplit');
     ['dragenter', 'dragover'].forEach(e => {
       dzSplit.addEventListener(e, ev => { ev.preventDefault(); dzSplit.classList.add('dragover'); });
@@ -555,77 +587,115 @@
       if (!file || (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf'))) return;
       splitFileObj = file;
 
+      const grid = document.getElementById('pagesGrid');
+      grid.innerHTML = '<div style="color:var(--muted); font-size:0.85rem;">Rendering thumbnails...</div>';
+      document.getElementById('splitControls').style.display = 'block';
+
       try {
         const arrayBuffer = await file.arrayBuffer();
-        const pdf = await PDFLib.PDFDocument.load(arrayBuffer);
-        splitDocTotalPages = pdf.getPageCount();
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        const total = pdf.numPages;
 
-        document.getElementById('lblSplitFileStatus').innerText = `${file.name} (${splitDocTotalPages} pages)`;
-        document.getElementById('splitControls').style.display = 'block';
-        document.getElementById('inputPages').placeholder = `e.g. 1, 2-${splitDocTotalPages}`;
-      } catch (e) {
-        alert((currentLang === 'en') ? 'Could not read PDF: ' + e.message : 'पीडीएफ पढ़ने में विफल: ' + e.message);
-      }
-    }
+        document.getElementById('lblSplitFileStatus').innerText = `${file.name} (${total} pages)`;
+        document.getElementById('txtGridCount').innerText = `Total Pages: ${total}`;
 
-    function parsePageRange(rangeStr, maxPages) {
-      const pages = new Set();
-      const parts = rangeStr.split(',');
+        pageStates = [];
+        grid.innerHTML = '';
 
-      for (let part of parts) {
-        part = part.trim();
-        if (part.includes('-')) {
-          const [start, end] = part.split('-').map(Number);
-          if (!isNaN(start) && !isNaN(end)) {
-            for (let i = Math.max(1, start); i <= Math.min(maxPages, end); i++) {
-              pages.add(i);
-            }
-          }
-        } else {
-          const p = Number(part);
-          if (!isNaN(p) && p >= 1 && p <= maxPages) {
-            pages.add(p);
-          }
+        for (let i = 1; i <= total; i++) {
+          pageStates.push({ pageNum: i, deleted: false, rotation: 0 });
+
+          const card = document.createElement('div');
+          card.className = 'page-card';
+          card.id = `pageCard_${i}`;
+
+          const canvasWrap = document.createElement('div');
+          canvasWrap.className = 'page-canvas-wrap';
+
+          const canvas = document.createElement('canvas');
+          canvas.id = `canvasPage_${i}`;
+          canvasWrap.appendChild(canvas);
+
+          card.innerHTML = `
+            <div class="page-controls">
+              <span>Page ${i}</span>
+              <div style="display:flex; gap:4px;">
+                <button class="page-btn-icon" title="Rotate 90°" onclick="rotatePage(${i})">↻</button>
+                <button class="page-btn-icon" title="Delete / Exclude" onclick="toggleDeletePage(${i})" style="color:var(--primary);">✕</button>
+              </div>
+            </div>
+          `;
+          card.insertBefore(canvasWrap, card.firstChild);
+          grid.appendChild(card);
+
+          // Render thumbnail
+          renderPageThumbnail(pdf, i, canvas);
         }
+      } catch (err) {
+        alert('Could not render PDF: ' + err.message);
       }
-      return Array.from(pages).sort((a,b) => a - b);
     }
 
-    async function executeSplit() {
-      if (!splitFileObj) return;
-      const rangeStr = document.getElementById('inputPages').value.trim();
-      if (!rangeStr) {
-        alert((currentLang === 'en') ? 'Please enter page numbers to extract.' : 'कृपया निकाले जाने वाले पेज नंबर दर्ज करें।');
-        return;
-      }
+    async function renderPageThumbnail(pdf, pageNum, canvas) {
+      const page = await pdf.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 0.35 });
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport }).promise;
+    }
 
-      const selectedPages = parsePageRange(rangeStr, splitDocTotalPages);
-      if (selectedPages.length === 0) {
-        alert((currentLang === 'en') ? 'No valid pages found in the range specified.' : 'दिए गए रेंज में कोई वैध पेज नहीं मिला।');
+    function toggleDeletePage(pageNum) {
+      const state = pageStates.find(p => p.pageNum === pageNum);
+      if (!state) return;
+      state.deleted = !state.deleted;
+      const card = document.getElementById(`pageCard_${pageNum}`);
+      card.classList.toggle('deleted', state.deleted);
+    }
+
+    function rotatePage(pageNum) {
+      const state = pageStates.find(p => p.pageNum === pageNum);
+      if (!state) return;
+      state.rotation = (state.rotation + 90) % 360;
+      const canvas = document.getElementById(`canvasPage_${pageNum}`);
+      canvas.style.transform = `rotate(${state.rotation}deg)`;
+    }
+
+    async function executeVisualExport() {
+      if (!splitFileObj) return;
+
+      const activePages = pageStates.filter(p => !p.deleted);
+      if (activePages.length === 0) {
+        alert('All pages are deleted! Please keep at least one page.');
         return;
       }
 
       const btn = document.getElementById('btnSplitAction');
       btn.disabled = true;
-      btn.innerText = (currentLang === 'en') ? 'Extracting Pages...' : 'पेज निकाले जा रहे हैं...';
+      btn.innerText = (currentLang === 'en') ? 'Exporting PDF...' : 'डाउनलोड तैयार हो रहा है...';
 
       try {
         const arrayBuffer = await splitFileObj.arrayBuffer();
         const srcPdf = await PDFLib.PDFDocument.load(arrayBuffer);
         const newPdf = await PDFLib.PDFDocument.create();
 
-        // 0-indexed page extraction
-        const pageIndices = selectedPages.map(p => p - 1);
-        const copiedPages = await newPdf.copyPages(srcPdf, pageIndices);
-        copiedPages.forEach(page => newPdf.addPage(page));
+        for (let p of activePages) {
+          const [copiedPage] = await newPdf.copyPages(srcPdf, [p.pageNum - 1]);
+          if (p.rotation > 0) {
+            const currentRotation = copiedPage.getRotation().angle;
+            copiedPage.setRotation(PDFLib.degrees(currentRotation + p.rotation));
+          }
+          newPdf.addPage(copiedPage);
+        }
 
         const newPdfBytes = await newPdf.save();
-        downloadBlob(newPdfBytes, `extracted_pages_${selectedPages.join('_')}.pdf`);
+        downloadBlob(newPdfBytes, `processed_${activePages.length}_pages.pdf`);
       } catch (err) {
-        alert((currentLang === 'en') ? 'Error splitting PDF: ' + err.message : 'पीडीएफ स्प्लिट में त्रुटि: ' + err.message);
+        alert('Export error: ' + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerText = (currentLang === 'en') ? '✂️ Extract Pages & Download' : '✂️ पेज निकालें व डाउनलोड करें';
+        btn.innerText = (currentLang === 'en') ? '💾 Download Processed PDF' : '💾 संशोधित पीडीएफ डाउनलोड करें';
       }
     }
 
@@ -644,38 +714,32 @@
 
       if (currentLang === 'hi') {
         document.getElementById('btnLangText').innerText = 'Switch to English';
-        document.getElementById('lblZeroUploadBadge').innerText = '100% सुरक्षित (प्राइवेट)';
-        document.getElementById('txtTitle').innerText = 'पीडीएफ मर्ज व स्प्लिट करें (ऑफलाइन)';
-        document.getElementById('txtSubtitle').innerText = 'मार्कशीट, प्रमाणपत्र और एडमिट कार्ड को बिना किसी सर्वर अपलोड के सीधे अपने डिवाइस में जोड़ें या अलग करें।';
+        document.getElementById('lblZeroUploadBadge').innerText = '100% सुरक्षित (ऑफलाइन)';
+        document.getElementById('txtTitle').innerText = 'पीडीएफ मर्ज, स्प्लिट, रोटेट व पेज हटाएं';
+        document.getElementById('txtSubtitle').innerText = 'मार्कशीट और एडमिट कार्ड को विजुअल थंबनेल देखकर जोड़ें, घुमाएं या खाली पेज हटाएं। ज़ीरो सर्वर अपलोड।';
         document.getElementById('tabBtnMerge').innerText = '📑 पीडीएफ मर्ज करें';
-        document.getElementById('tabBtnSplit').innerText = '✂️️ पेज अलग करें (Split)';
-        document.getElementById('txtMergeHead').innerText = 'एक से अधिक पीडीएफ फाइलें जोड़ें';
+        document.getElementById('tabBtnSplit').innerText = '✂ विजुअल पेज ऑर्गनाइजर';
+        document.getElementById('txtMergeHead').innerText = 'एक से अधिक पीडीएफ जोड़ें';
         document.getElementById('txtMergeSub').innerText = 'फाइलों को क्रम से जोड़कर एक नया दस्तावेज तैयार करें';
-        document.getElementById('txtDropMerge').innerText = 'पीडीएफ चुनने के लिए क्लिक करें या ड्रैग करें';
         document.getElementById('btnMergeAction').innerText = '⚡ मर्ज करें और डाउनलोड करें';
-        document.getElementById('txtSplitHead').innerText = 'पीडीएफ से मनचाहे पेज निकालें';
-        document.getElementById('txtSplitSub').innerText = 'पेज नंबर या रेंज दर्ज करके आवश्यक पेज डाउनलोड करें';
-        document.getElementById('txtDropSplit').innerText = 'पीडीएफ फाइल यहाँ ड्रैग करें';
-        document.getElementById('lblPageRange').innerText = 'पेज संख्या या रेंज दर्ज करें (उदा. 1, 3-5, 8)';
-        document.getElementById('btnSplitAction').innerText = '✂️ पेज निकालें व डाउनलोड करें';
-        document.getElementById('txtZeroStorage').innerText = '100% प्राइवेट: आपकी गोपनीय मार्कशीट, प्रमाण पत्र या दस्तावेज किसी सर्वर पर अपलोड नहीं होते। सभी कार्य सीधे आपके ब्राउज़र में होते हैं।';
+        document.getElementById('txtSplitHead').innerText = 'विजुअल पेज ऑर्गनाइजर व स्प्लिट';
+        document.getElementById('txtSplitSub').innerText = 'थंबनेल देखकर पेज घुमाएं (90°), खाली पेज हटाएं या अलग करें';
+        document.getElementById('btnSplitAction').innerText = '💾 संशोधित पीडीएफ डाउनलोड करें';
+        document.getElementById('txtGridHelp').innerText = 'पेज हटाने के लिए ✕ दबाएं • घुमाने के लिए ↻ दबाएं';
       } else {
         document.getElementById('btnLangText').innerText = 'हिंदी में बदलें (Hindi)';
-        document.getElementById('lblZeroUploadBadge').innerText = '100% Client-Side';
-        document.getElementById('txtTitle').innerText = 'Merge & Split PDF Pages Offline';
-        document.getElementById('txtSubtitle').innerText = 'Combine certificates, extract selected pages from marksheets or admit cards. Files process directly on your device with zero server uploads.';
+        document.getElementById('lblZeroUploadBadge').innerText = '100% In-Browser';
+        document.getElementById('txtTitle').innerText = 'Merge, Split, Rotate & Reorder PDFs Offline';
+        document.getElementById('txtSubtitle').innerText = 'Combine marksheets, rotate certificates, and delete unwanted pages with live visual thumbnails. 100% private in-browser tool.';
         document.getElementById('tabBtnMerge').innerText = '📑 Merge Multiple PDFs';
-        document.getElementById('tabBtnSplit').innerText = '✂️️ Split & Extract Pages';
-        document.getElementById('txtMergeHead').innerText = 'Merge Multiple PDF Files';
-        document.getElementById('txtMergeSub').innerText = 'Select multiple PDF files to combine them in order into a single document';
-        document.getElementById('txtDropMerge').innerText = 'Click to Select or Drag & Drop PDFs';
+        document.getElementById('tabBtnSplit').innerText = '✂️ Visual Page Organizer & Split';
+        document.getElementById('txtMergeHead').innerText = 'Merge Multiple PDF Documents';
+        document.getElementById('txtMergeSub').innerText = 'Select multiple PDFs to combine them in exact sequence into a single clean file';
         document.getElementById('btnMergeAction').innerText = '⚡ Merge & Download PDF';
-        document.getElementById('txtSplitHead').innerText = 'Extract or Split PDF Pages';
-        document.getElementById('txtSplitSub').innerText = 'Choose a multi-page PDF and enter page numbers or ranges to export';
-        document.getElementById('txtDropSplit').innerText = 'Click to Select or Drag Single PDF';
-        document.getElementById('lblPageRange').innerText = 'Page Numbers or Ranges (e.g. 1, 3-5, 8)';
-        document.getElementById('btnSplitAction').innerText = '✂️ Extract Pages & Download';
-        document.getElementById('txtZeroStorage').innerText = '100% Private & In-Browser: Your confidential government IDs, admit cards, and marksheets are processed solely in memory. Nothing is ever sent to a server.';
+        document.getElementById('txtSplitHead').innerText = 'Visual Page Organizer & Split';
+        document.getElementById('txtSplitSub').innerText = 'View live thumbnails, rotate pages (90°), delete blank pages, or extract specific pages';
+        document.getElementById('btnSplitAction').innerText = '💾 Download Processed PDF';
+        document.getElementById('txtGridHelp').innerText = 'Click ✕ to exclude page • ↻ to rotate';
       }
     }
   </script>
